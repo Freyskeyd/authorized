@@ -1,0 +1,18 @@
+[package]
+name = "authorized"
+version = "0.1.1"
+authors = ["Freyskeyd <simon.paitrault@gmail.com>"]
+edition = "2018"
+description = "Authorized struct's fields"
+license = "MIT"
+repository = "https://github.com/Freyskeyd/authorized"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"], optional = true }
+authorized_derive = { version = "0.1.0", path = "../authorized_derive" }
+
+[features]
+default = []
+with_serde = ["serde"]
