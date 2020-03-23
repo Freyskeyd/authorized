@@ -3,5 +3,6 @@
 members = [
 	"authorized",
 	"authorized_derive",
-	"tests"
+	"tests",
+	"examples/simple"
 ]

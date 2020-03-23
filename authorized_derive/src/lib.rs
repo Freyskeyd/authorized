@@ -96,7 +96,7 @@ fn generate_authorized_trait(
             let unauthorized = match &f.default {
                 None => quote! { Default::default() },
                 Some(def) => match syn::parse_str::<syn::Path>(def) {
-                    Ok(path) => quote! { #path() },
+                    Ok(path) => quote! { #path },
                     _ => panic!("Cannot parse default path"),
                 },
             };
