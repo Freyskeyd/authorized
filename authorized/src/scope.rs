@@ -33,28 +33,26 @@ use std::cmp;
 ///     email: String
 /// }
 ///
-/// fn main() {
-///     let admin_scope = "admin".parse::<Scope>().unwrap();
-///     let regular_scope = "regular".parse::<Scope>().unwrap();
-///     let guest_scope = "guest".parse::<Scope>().unwrap();
+/// let admin_scope = "admin".parse::<Scope>().unwrap();
+/// let regular_scope = "regular".parse::<Scope>().unwrap();
+/// let guest_scope = "guest".parse::<Scope>().unwrap();
 ///
-///     let username_scope = "".parse::<Scope>().unwrap();
-///     let email_scope = "!guest".parse::<Scope>().unwrap();
-///     let password_scope = "admin".parse::<Scope>().unwrap();
+/// let username_scope = "".parse::<Scope>().unwrap();
+/// let email_scope = "!guest".parse::<Scope>().unwrap();
+/// let password_scope = "admin".parse::<Scope>().unwrap();
 ///
 ///
-///     assert!(username_scope.allow_access(&guest_scope));
-///     assert!(!email_scope.allow_access(&guest_scope));
-///     assert!(!password_scope.allow_access(&guest_scope));
+/// assert!(username_scope.allow_access(&guest_scope));
+/// assert!(!email_scope.allow_access(&guest_scope));
+/// assert!(!password_scope.allow_access(&guest_scope));
 ///
-///     assert!(username_scope.allow_access(&regular_scope));
-///     assert!(email_scope.allow_access(&regular_scope));
-///     assert!(!password_scope.allow_access(&regular_scope));
+/// assert!(username_scope.allow_access(&regular_scope));
+/// assert!(email_scope.allow_access(&regular_scope));
+/// assert!(!password_scope.allow_access(&regular_scope));
 ///
-///     assert!(username_scope.allow_access(&admin_scope));
-///     assert!(email_scope.allow_access(&admin_scope));
-///     assert!(password_scope.allow_access(&admin_scope));
-/// }
+/// assert!(username_scope.allow_access(&admin_scope));
+/// assert!(email_scope.allow_access(&admin_scope));
+/// assert!(password_scope.allow_access(&admin_scope));
 /// ```
 #[derive(Clone, PartialEq, Eq)]
 pub struct Scope {
@@ -131,14 +129,20 @@ impl str::FromStr for Scope {
 
         let denied_tokens: HashSet<String> = tokens
             .clone()
-            .filter(|s| s.starts_with('!'))
-            .map(|s| str::to_string(&s[1..]))
+            .filter_map(|s| if s.starts_with('!') {
+                Some(str::to_string(&s[1..]))
+            } else {
+                None
+            })
             .collect();
 
         let allowed_tokens: HashSet<String> = tokens
             .clone()
-            .filter(|s| !s.starts_with('!'))
-            .map(str::to_string)
+            .filter_map(|s| if s.starts_with('!') {
+                None
+            } else {
+                Some(str::to_string(s))
+            })
             .collect();
 
         Ok(Self {

@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+	"authorized",
+	"authorized_derive",
+	"tests"
+]

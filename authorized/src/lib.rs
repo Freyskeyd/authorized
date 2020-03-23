@@ -8,7 +8,7 @@
     clippy::all,
     // clippy::restriction,
     clippy::pedantic,
-    clippy::nursery,
+    // clippy::nursery,
     // clippy::cargo
 )]
 #![recursion_limit = "256"]
@@ -88,7 +88,7 @@ impl<T> Authorizable for Vec<T> where T: Authorizable {
                               })
         .partition(Result::is_ok);
 
-        let inner: Vec<_> = inner.into_iter().filter_map(Result::ok).collect();
+        let inner: Self::Authorized = inner.into_iter().filter_map(Result::ok).collect();
         Ok(AuthorizedResult {
             inner,
             input_scope: authorizer.clone(),
