@@ -1,4 +1,3 @@
-
 //! Authorized is a library helping you authorize behaviour on struct by defining allowed or denied
 //! scopes.
 //!
@@ -12,7 +11,6 @@
     // clippy::cargo
 )]
 #![recursion_limit = "256"]
-
 
 pub mod scope;
 
@@ -34,14 +32,16 @@ pub type UnAuthorizedFields = Vec<String>;
 pub trait Authorizable {
     type Authorized;
 
-    fn builder_authorized_struct<S: std::cmp::PartialEq + AsRef<str>>(input: &Self, unauthorized_fields: &[S]) -> Result<Self::Authorized, AuthorizedError>;
+    fn builder_authorized_struct<S: std::cmp::PartialEq + AsRef<str>>(
+        input: &Self,
+        unauthorized_fields: &[S],
+    ) -> Result<Self::Authorized, AuthorizedError>;
     fn filter_unauthorized_fields(input: &Self, scope: &Scope) -> UnAuthorizedFields;
     fn authorize(
         input: &Self,
         authorizer: &Scope,
     ) -> Result<AuthorizedResult<Self::Authorized>, AuthorizedError>;
 }
-
 
 /// Authorizor exposed mthods to help you authorize structures which implement
 /// [Authorizable](trait.Authorizable.html) trait.
@@ -63,59 +63,63 @@ impl Authorizor {
     }
 }
 
-impl<T> Authorizable for Vec<T> where T: Authorizable {
+impl<T> Authorizable for Vec<T>
+where
+    T: Authorizable,
+{
     type Authorized = Vec<AuthorizedResult<T::Authorized>>;
 
-    fn builder_authorized_struct<S: std::cmp::PartialEq + AsRef<str>>(_input: &Self, _unauthorized_fields: &[S]) -> Result<Self::Authorized, AuthorizedError>
-    {
+    fn builder_authorized_struct<S: std::cmp::PartialEq + AsRef<str>>(
+        _input: &Self,
+        _unauthorized_fields: &[S],
+    ) -> Result<Self::Authorized, AuthorizedError> {
         Ok(vec![])
     }
 
-    fn filter_unauthorized_fields(_input: &Self, _scope: &Scope) -> UnAuthorizedFields
-    {
+    fn filter_unauthorized_fields(_input: &Self, _scope: &Scope) -> UnAuthorizedFields {
         vec![]
     }
 
     fn authorize(
         input: &Self,
         authorizer: &Scope,
-    ) -> Result<AuthorizedResult<Self::Authorized>, AuthorizedError>
-    {
+    ) -> Result<AuthorizedResult<Self::Authorized>, AuthorizedError> {
         let (inner, _errors): (Vec<Result<AuthorizedResult<_>, AuthorizedError>>, Vec<_>) = input
-                              .iter()
-                              .map(|v| {
-                                  Authorizable::authorize(v, authorizer)
-                              })
-        .partition(Result::is_ok);
+            .iter()
+            .map(|v| Authorizable::authorize(v, authorizer))
+            .partition(Result::is_ok);
 
         let inner: Self::Authorized = inner.into_iter().filter_map(Result::ok).collect();
         Ok(AuthorizedResult {
             inner,
             input_scope: authorizer.clone(),
             status: AuthorizationStatus::Authorized,
-            unauthorized_fields: vec![]
+            unauthorized_fields: vec![],
         })
     }
 }
 
-impl<T> Authorizable for &T where T: Authorizable {
+impl<T> Authorizable for &T
+where
+    T: Authorizable,
+{
     type Authorized = T::Authorized;
 
-    fn builder_authorized_struct<S: std::cmp::PartialEq + AsRef<str>>(_input: &Self, _unauthorized_fields: &[S]) -> Result<Self::Authorized, AuthorizedError>
-    {
+    fn builder_authorized_struct<S: std::cmp::PartialEq + AsRef<str>>(
+        _input: &Self,
+        _unauthorized_fields: &[S],
+    ) -> Result<Self::Authorized, AuthorizedError> {
         unreachable!();
     }
 
-    fn filter_unauthorized_fields(_input: &Self, _scope: &Scope) -> UnAuthorizedFields
-    {
+    fn filter_unauthorized_fields(_input: &Self, _scope: &Scope) -> UnAuthorizedFields {
         unreachable!();
     }
 
     fn authorize(
         input: &Self,
         authorizer: &Scope,
-    ) -> Result<AuthorizedResult<Self::Authorized>, AuthorizedError>
-    {
+    ) -> Result<AuthorizedResult<Self::Authorized>, AuthorizedError> {
         let unauthorized_fields: Vec<String> = T::filter_unauthorized_fields(input, authorizer);
         let inner = T::builder_authorized_struct(input, &unauthorized_fields)?;
 
@@ -123,13 +127,12 @@ impl<T> Authorizable for &T where T: Authorizable {
             inner,
             input_scope: authorizer.clone(),
             status: AuthorizationStatus::Authorized,
-            unauthorized_fields
+            unauthorized_fields,
         })
     }
 }
 
 pub trait Authorized {}
-
 
 impl<T> Authorized for AuthorizedResult<T> where T: Authorized {}
 impl<T> Authorized for Vec<T> where T: Authorized {}
@@ -142,7 +145,7 @@ mod tests {
     struct MyUser {
         name: String,
         pass: String,
-        email: String
+        email: String,
     }
 
     impl Authorized for MyUser {}
@@ -150,25 +153,25 @@ mod tests {
     impl Authorizable for MyUser {
         type Authorized = Self;
 
-        fn builder_authorized_struct<S: std::cmp::PartialEq + AsRef<str>>(input: &Self, _unauthorized_fields: &[S]) -> Result<Self::Authorized, AuthorizedError>
-        {
+        fn builder_authorized_struct<S: std::cmp::PartialEq + AsRef<str>>(
+            input: &Self,
+            _unauthorized_fields: &[S],
+        ) -> Result<Self::Authorized, AuthorizedError> {
             Ok(Self {
                 name: input.name.clone(),
                 pass: input.pass.clone(),
-                email: String::new()
+                email: String::new(),
             })
         }
 
-        fn filter_unauthorized_fields(_input: &Self, _scope: &Scope) -> UnAuthorizedFields
-        {
+        fn filter_unauthorized_fields(_input: &Self, _scope: &Scope) -> UnAuthorizedFields {
             vec!["email".into()]
         }
 
         fn authorize(
             input: &Self,
             authorizer: &Scope,
-        ) -> Result<AuthorizedResult<Self::Authorized>, AuthorizedError>
-        {
+        ) -> Result<AuthorizedResult<Self::Authorized>, AuthorizedError> {
             let unauthorized_fields = Self::filter_unauthorized_fields(input, authorizer);
             let inner = Self::builder_authorized_struct(input, &unauthorized_fields)?;
 
@@ -183,7 +186,7 @@ mod tests {
 
     #[cfg(feature = "with_serde")]
     #[test]
-    fn it_works() -> Result<(), AuthorizedError>{
+    fn it_works() -> Result<(), AuthorizedError> {
         let based_user = MyUser {
             name: "name".into(),
             pass: "pass".into(),

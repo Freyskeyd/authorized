@@ -10,4 +10,3 @@ impl<T: ::serde::ser::Serialize + Authorized> ::serde::ser::Serialize for Author
         self.inner.serialize(serializer)
     }
 }
-
