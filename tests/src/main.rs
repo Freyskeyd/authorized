@@ -29,7 +29,7 @@ fn main() {
     };
 
     let resources = vec![&resource, &resource2];
-    let json = Authorizor::authorize(&resources, "admin").unwrap();
+    let json = Authorizor::authorize(&resources, &"admin").unwrap();
     // let json = serde_json::to_string(&authorized).unwrap();
     println!("{:#?}", json);
 }
