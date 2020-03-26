@@ -10,7 +10,7 @@ struct MyResource {
     // #[serde(skip_serializing_if = "String::is_empty")]
     title: String,
     // #[serde(rename = "truc")]
-    description: Option<String>
+    description: Option<String>,
 }
 
 impl Authorized for MyResource {}
@@ -19,13 +19,13 @@ fn main() {
     let resource = MyResource {
         id: 1,
         title: "Some title".into(),
-        description: Some("description".into())
+        description: Some("description".into()),
     };
 
     let resource2 = MyResource {
         id: 2,
         title: "Some title2".into(),
-        description: Some("description".into())
+        description: Some("description".into()),
     };
 
     let resources = vec![&resource, &resource2];
@@ -33,4 +33,3 @@ fn main() {
     // let json = serde_json::to_string(&authorized).unwrap();
     println!("{:#?}", json);
 }
-

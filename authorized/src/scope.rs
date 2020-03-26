@@ -91,7 +91,10 @@ pub trait IntoScope {
     fn into_scope(&self) -> Result<Scope, ParseScopeErr>;
 }
 
-impl<T> IntoScope for T where T: AsRef<str> {
+impl<T> IntoScope for T
+where
+    T: AsRef<str>,
+{
     fn into_scope(&self) -> Result<Scope, ParseScopeErr> {
         self.as_ref().parse::<Scope>()
     }
@@ -129,19 +132,23 @@ impl str::FromStr for Scope {
 
         let denied_tokens: HashSet<String> = tokens
             .clone()
-            .filter_map(|s| if s.starts_with('!') {
-                Some(str::to_string(&s[1..]))
-            } else {
-                None
+            .filter_map(|s| {
+                if s.starts_with('!') {
+                    Some(str::to_string(&s[1..]))
+                } else {
+                    None
+                }
             })
             .collect();
 
         let allowed_tokens: HashSet<String> = tokens
             .clone()
-            .filter_map(|s| if s.starts_with('!') {
-                None
-            } else {
-                Some(str::to_string(s))
+            .filter_map(|s| {
+                if s.starts_with('!') {
+                    None
+                } else {
+                    Some(str::to_string(s))
+                }
             })
             .collect();
 
