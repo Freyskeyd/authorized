@@ -10,6 +10,7 @@
     // clippy::nursery,
     // clippy::cargo
 )]
+#![allow(clippy::module_name_repetitions)]
 #![recursion_limit = "256"]
 
 pub mod scope;
@@ -32,11 +33,18 @@ pub type UnAuthorizedFields = Vec<String>;
 pub trait Authorizable {
     type Authorized;
 
+    ///
+    /// # Errors
+    ///
     fn builder_authorized_struct<S: std::cmp::PartialEq + AsRef<str>>(
         input: &Self,
         unauthorized_fields: &[S],
     ) -> Result<Self::Authorized, AuthorizedError>;
     fn filter_unauthorized_fields(input: &Self, scope: &Scope) -> UnAuthorizedFields;
+
+    ///
+    /// # Errors
+    ///
     fn authorize(
         input: &Self,
         authorizer: &Scope,
@@ -53,9 +61,12 @@ impl Authorizor {
     ///
     /// It returns an [`AuthorizedResult`](struct.AuthorizedResult.html) which allow you to know
     /// which fields have been secured and if the whole structure is authorized or not.
+    ///
+    /// # Errors
+    ///
     pub fn authorize<A: Authorizable, T: IntoScope>(
         inner: &A,
-        scope: T,
+        scope: &T,
     ) -> Result<AuthorizedResult<A::Authorized>, AuthorizedError> {
         let scope: Scope = scope.into_scope()?;
 

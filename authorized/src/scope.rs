@@ -88,6 +88,10 @@ impl Scope {
 
 /// Expose method to convert the structure into a scope
 pub trait IntoScope {
+
+    ///
+    /// # Errors
+    ///
     fn into_scope(&self) -> Result<Scope, ParseScopeErr>;
 }
 
