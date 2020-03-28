@@ -16,7 +16,7 @@ use darling::ast;
 use darling::FromDeriveInput;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
-use syn::DeriveInput;
+
 #[derive(Debug, FromDeriveInput)]
 // This line says that we want to process all attributes declared with `my_trait`,
 // and that darling should panic if this receiver is given an enum.
@@ -35,8 +35,8 @@ struct AuthorizedOpts {
 
     /// The Input Receiver demands a volume, so use `Volume::Normal` if the
     /// caller doesn't provide one.
-    // #[darling(default)]
-    scope: String,
+    #[darling(default)]
+    scope: Option<String>,
 }
 
 #[derive(Debug, FromField)]
@@ -148,7 +148,7 @@ fn generate_authorized_trait(
 
 fn generate_authorizable_trait(
     struct_name: &syn::Ident,
-    global_scope: &str,
+    global_scope: &Option<String>,
     fields: &[&AuthorizedField],
 ) -> proc_macro2::TokenStream {
     let filtering_fields = fields
@@ -175,9 +175,19 @@ fn generate_authorizable_trait(
         .collect::<Vec<_>>();
 
     let serialized_struct = generate_authorized_trait(struct_name, fields);
+    let global_scopes = if let Some(gscope) = global_scope {
+        quote! {
+            let global_scopes: Vec<Scope> = vec!(#gscope.parse::<Scope>()?);
+        }
+    } else {
+        quote! {
+            let global_scopes: Vec<Scope> = vec!();
+        }
+    };
+
     quote! {
         impl Authorizable for #struct_name {
-            type Authorized = Self;
+            type Authorized = #struct_name;
 
             #serialized_struct
 
@@ -193,10 +203,10 @@ fn generate_authorizable_trait(
             }
 
             fn authorize(input: &Self, input_scope: &authorized::scope::Scope) -> Result<AuthorizedResult<Self::Authorized>, AuthorizedError> {
-                let global_scopes = vec!(#global_scope.parse::<Scope>()?);
+                #global_scopes
                 let unauthorized_fields = Self::filter_unauthorized_fields(input, input_scope);
 
-                let status = if global_scopes.iter().map(|scope| scope.allow_access(&input_scope)).any(|access| access) {
+                let status = if global_scopes.is_empty() || global_scopes.iter().map(|scope| scope.allow_access(&input_scope)).any(|access| access) {
                     AuthorizationStatus::Authorized
                 } else {
                     AuthorizationStatus::UnAuthorized
@@ -216,8 +226,15 @@ fn generate_authorizable_trait(
 
 #[proc_macro_derive(Authorized, attributes(authorized))]
 pub fn derive_authorized(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let input: DeriveInput = syn::parse(input).unwrap();
-    let res = AuthorizedOpts::from_derive_input(&input).unwrap();
-
-    proc_macro::TokenStream::from(quote!(#res))
+    if let Ok(input) = syn::parse(input) {
+        // let input: DeriveInput = syn::parse(input).unwrap();
+        if let Ok(res) = AuthorizedOpts::from_derive_input(&input) {
+            proc_macro::TokenStream::from(quote!(#res))
+        } else {
+            proc_macro::TokenStream::new()
+        }
+    // let res = AuthorizedOpts::from_derive_input(&input).unwrap();
+    } else {
+        proc_macro::TokenStream::new()
+    }
 }
